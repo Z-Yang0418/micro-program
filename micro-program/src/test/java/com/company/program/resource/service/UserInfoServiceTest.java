@@ -42,7 +42,7 @@ public class UserInfoServiceTest {
     @Test
     public void createUserInfo() {
         UserInfoDTO userInfo = new UserInfoDTO();
-        userInfo.setName("张三");
+        userInfo.setName("李四");
         userInfo.setPhone("18611106984");
         userInfo.setJobNumber("2");
         userInfo.setState(1);
