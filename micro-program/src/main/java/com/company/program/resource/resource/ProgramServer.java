@@ -13,11 +13,11 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableFeignClients(basePackages = {"com.company.program.api"})
 @ComponentScan(basePackages = {"com.company.program"})
 @EnableHystrix
-public class ResourceServer {
+public class ProgramServer {
 
 	
 	public static void main(String[] args) {
-		SpringApplication.run(ResourceServer.class, args);
+		SpringApplication.run(ProgramServer.class, args);
 
 	}
 

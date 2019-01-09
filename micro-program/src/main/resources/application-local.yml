@@ -1,6 +1,6 @@
 server: 
   port: 53030
-  
+
 eureka:
     client:
         serviceUrl:

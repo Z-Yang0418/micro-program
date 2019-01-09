@@ -8,7 +8,7 @@
 
 package com.company.program.resource.service;
 
-import com.company.program.resource.resource.ResourceServer;
+import com.company.program.resource.resource.ProgramServer;
 import com.company.program.resource.resource.dto.UserInfoDTO;
 import com.company.program.resource.resource.dto.UserInfoQuery;
 import com.company.program.resource.resource.service.UserInfoService;
@@ -31,7 +31,7 @@ import java.util.Map;
 
 @ActiveProfiles("local")
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {ResourceServer.class})
+@SpringBootTest(classes = {ProgramServer.class})
 public class UserInfoServiceTest {
 
     private static final Logger logger = LoggerFactory.getLogger(UserInfoServiceTest.class);

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.annotations.Api;
 
 @RestController
-@RequestMapping(value = "/resource")
+@RequestMapping(value = "/")
 @Api(value = "用户模块demo", tags = "UserInfoApi", description="用户操作demo")
 public class UserInfoController {
 
@@ -56,6 +56,14 @@ public class UserInfoController {
 	public RestResponse<Page<UserInfoDTO>> pageApplicationByConditions(@RequestBody UserInfoQuery queryParams, @RequestParam Integer pageNo, @RequestParam Integer pageSize){
 		Page<UserInfoDTO> page = userInfoService.pageUserInfoByConditions(queryParams,pageNo,pageSize);
 		return RestResponse.success(page);
+	}
+
+	@ApiOperation("根据id查询用户信息")
+	@ApiImplicitParam(name = "id", value = "根据id查询", required = true, dataType = "Long", paramType="path")
+	@GetMapping(value = "/user/{id}")
+	public RestResponse<UserInfoDTO> getUserInfoById(@PathVariable("id") Long id) {
+		UserInfoDTO userInfo = userInfoService.getUserInfoById(id);
+		return RestResponse.success(userInfo);
 	}
 	
 

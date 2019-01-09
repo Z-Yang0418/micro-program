@@ -3,7 +3,7 @@
 package com.company.program.resource.common.cache;
 
 
-import com.company.program.resource.resource.ResourceServer;
+import com.company.program.resource.resource.ProgramServer;
 import com.company.program.resource.resource.common.cache.Cache;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,7 +15,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @ActiveProfiles("local")
 @RunWith(SpringRunner.class)
-@SpringBootTest (classes = {ResourceServer.class})
+@SpringBootTest (classes = {ProgramServer.class})
 public class CacheTest {
 	
 	@Autowired
