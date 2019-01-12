@@ -1,6 +1,6 @@
 
 
-package com.company.program.resource.resource.service;
+package com.company.program.resource.resource.service.impl;
 
 import com.company.program.resource.resource.dto.UserInfoDTO;
 import com.company.program.resource.resource.dto.UserInfoQuery;
@@ -8,6 +8,7 @@ import com.company.program.resource.resource.entity.UserInfo;
 import com.company.program.resource.common.domain.BusinessException;
 import com.company.program.resource.common.domain.ErrorCode;
 import com.company.program.resource.resource.respository.UserInfoRepository;
+import com.company.program.resource.resource.service.UserInfoService;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.SQLQuery;
 import org.hibernate.transform.Transformers;
