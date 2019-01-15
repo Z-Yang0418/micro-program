@@ -18,4 +18,6 @@ public interface ProgramInfoRepository extends JpaSpecificationExecutor<ProgramI
      * @return
      */
     List<ProgramInfo> findByChannelIdAndPrograminfoDate(Long channelId, Date date);
+
+    List<ProgramInfo> findByPrograminfoDate(Date date);
 }

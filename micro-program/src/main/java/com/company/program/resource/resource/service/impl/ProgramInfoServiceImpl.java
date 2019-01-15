@@ -33,7 +33,10 @@ public class ProgramInfoServiceImpl implements ProgramInfoService {
         return convertChannelInfoEntityToDTOs(programInfoRepository.findByChannelIdAndPrograminfoDate(channelId, new Date()));
     }
 
-
+    @Override
+    public List<ProgramInfoDTO> getProgramInfoByDate() {
+        return convertChannelInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(new Date()));
+    }
 
 
     ////以下是dto entity 互转方法

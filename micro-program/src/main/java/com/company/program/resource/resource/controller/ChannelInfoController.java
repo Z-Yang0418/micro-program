@@ -41,6 +41,10 @@ public class ChannelInfoController {
     public List<Map> getUserInfoByClassId(@PathVariable(value = "classId", required = false) String classId) {
         List<Map> channelMapList = new ArrayList<>();
         List<ChannelInfoDTO> channelInfoList = channelInfoService.getChannelInfoByClassId(classId);
+        //获取当前日期下所有节目单信息
+        List<ProgramInfoDTO> programInfoDTOS = programInfoService.getProgramInfoByDate();
+
+
         //提取并转化成与原接口一致的标准参数
         for(ChannelInfoDTO channelInfoDTO : channelInfoList){
             Map channelMap = new LinkedHashMap();
@@ -71,20 +75,22 @@ public class ChannelInfoController {
             }
 
 
-            //TODO 查询对应channelId对应的节目单详情  [循环内遍历查询后期可能出现性能问题，后期要改]
-            List<ProgramInfoDTO> programInfoDTOS = programInfoService.getProgramInfoByChannelId(channelInfoDTO.getChannelId());
-            if(programInfoDTOS.size()==0){//没有找到节目单信息的话，返回isprograms=0
+            //组装对应频率日期下的节目单详情参数
+            for(ProgramInfoDTO programInfoDTO : programInfoDTOS){
                 channelMap.put("update_id", "");
                 channelMap.put("isprograms", 0);
                 channelMap.put("live", "");
                 channelMap.put("time", "");
-            } else {
-                try {
-                    this.assembedProgramParams(programInfoDTOS.get(0), channelMap);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if(programInfoDTO.getChannelId().equals(channelInfoDTO.getChannelId())){
+                    try {
+                        this.assembedProgramParams(programInfoDTO, channelMap);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
+
             }
+
             channelMapList.add(MapUtil.nullToEmpty(channelMap));
         }
 

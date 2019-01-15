@@ -14,4 +14,11 @@ public interface ProgramInfoService {
      * @return
      */
     List<ProgramInfoDTO> getProgramInfoByChannelId(Long channelId);
+
+    /**
+     * 根据当前日期查询节目详情信息
+     * @param
+     * @return
+     */
+    List<ProgramInfoDTO> getProgramInfoByDate();
 }
