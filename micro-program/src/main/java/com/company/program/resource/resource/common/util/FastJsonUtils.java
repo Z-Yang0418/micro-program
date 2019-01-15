@@ -1,6 +1,7 @@
 package com.company.program.resource.resource.common.util;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.JSONLibDataFormatSerializer;
 import com.alibaba.fastjson.serializer.SerializeConfig;
@@ -122,5 +123,9 @@ public class FastJsonUtils {
     public static <K, V> String collectToString(Map<K, V> m) {
         String s = JSONObject.toJSONString(m);
         return s;
+    }
+
+    public static JSONArray parseArray(String text) {
+        return JSONArray.parseArray(text);
     }
 }

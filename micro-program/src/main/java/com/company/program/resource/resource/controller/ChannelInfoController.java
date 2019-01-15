@@ -1,11 +1,12 @@
 package com.company.program.resource.resource.controller;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.company.program.resource.resource.common.util.FastJsonUtils;
 import com.company.program.resource.resource.dto.ChannelInfoDTO;
+import com.company.program.resource.resource.dto.ProgramInfoDTO;
 import com.company.program.resource.resource.service.ChannelInfoService;
+import com.company.program.resource.resource.service.ProgramInfoService;
 import com.company.program.resource.util.MapUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -18,11 +19,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.sql.Array;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @RestController
 @RequestMapping(value = "/get/live")
@@ -34,6 +32,9 @@ public class ChannelInfoController {
     @Autowired
     private ChannelInfoService channelInfoService;
 
+    @Autowired
+    private ProgramInfoService programInfoService;
+
     @ApiOperation("指定频率类别列表接口")
     @ApiImplicitParam(name = "classId", value = "根据classId查询频率", required = true, dataType = "String", paramType="path")
     @GetMapping(value = {"/class/{classId}", "/class"})
@@ -43,6 +44,7 @@ public class ChannelInfoController {
         //提取并转化成与原接口一致的标准参数
         for(ChannelInfoDTO channelInfoDTO : channelInfoList){
             Map channelMap = new LinkedHashMap();
+
             String channelInfoJsonStr = channelInfoDTO.getChannelInfo();
             //将channelInfo字段内的json数据转为object
             JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
@@ -67,10 +69,84 @@ public class ChannelInfoController {
             } else {
                 channelMap.put("video_streams", new String[]{""});
             }
+
+
+            //TODO 查询对应channelId对应的节目单详情  [循环内遍历查询后期可能出现性能问题，后期要改]
+            List<ProgramInfoDTO> programInfoDTOS = programInfoService.getProgramInfoByChannelId(channelInfoDTO.getChannelId());
+            if(programInfoDTOS.size()==0){//没有找到节目单信息的话，返回isprograms=0
+                channelMap.put("update_id", "");
+                channelMap.put("isprograms", 0);
+                channelMap.put("live", "");
+                channelMap.put("time", "");
+            } else {
+                try {
+                    this.assembedProgramParams(programInfoDTOS.get(0), channelMap);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             channelMapList.add(MapUtil.nullToEmpty(channelMap));
         }
 
         return channelMapList;
+    }
+
+
+    /**
+     * 将频率下正在播出的节目参数，组装进接口
+     * @param programInfoDTO
+     * @param channelMap
+     * @throws Exception
+     */
+    private void assembedProgramParams(ProgramInfoDTO programInfoDTO, Map channelMap) throws Exception {
+        channelMap.put("update_id", programInfoDTO.getPrograminfoId());
+        JSONArray jsonArr = FastJsonUtils.parseArray(programInfoDTO.getPrograminfoInfo());
+        int isProgram = 1;
+        for (Iterator iterator = jsonArr.iterator(); iterator.hasNext();) {
+            JSONObject job = (JSONObject) iterator.next();
+            SimpleDateFormat format = new SimpleDateFormat("HH:mm");
+            String nowDate = format.format(new Date());
+            String startDate = job.getString("start");
+            String endDate = job.getString("end");
+            channelMap.put("update_id", programInfoDTO.getPrograminfoId());
+            channelMap.put("isprograms", isProgram);
+            channelMap.put("live", "");
+            channelMap.put("time", "");
+            //得到属于当前时间的时间段的节目详情
+            if(this.hourMinuteBetween(nowDate, startDate, endDate)){
+                channelMap.put("update_id", programInfoDTO.getPrograminfoId());
+                channelMap.put("isprograms", isProgram);
+                channelMap.put("live", job.getString("title"));
+                channelMap.put("time", startDate+"-"+endDate);
+                break;
+            }
+
+        }
+
+    }
+
+
+    /**
+     *
+     * @param nowDate   要比较的时间
+     * @param startDate   开始时间
+     * @param endDate   结束时间
+     * @return   true在时间段内，false不在时间段内
+     * @throws Exception
+     */
+    public static boolean hourMinuteBetween(String nowDate, String startDate, String endDate) throws Exception{
+
+        SimpleDateFormat format = new SimpleDateFormat("HH:mm");
+
+        Date now = format.parse(nowDate);
+        Date start = format.parse(startDate);
+        Date end = format.parse(endDate);
+
+        long nowTime = now.getTime();
+        long startTime = start.getTime();
+        long endTime = end.getTime();
+
+        return nowTime >= startTime && nowTime <= endTime;
     }
 
 }
