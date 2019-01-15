@@ -74,13 +74,14 @@ public class ChannelInfoController {
                 channelMap.put("video_streams", new String[]{""});
             }
 
-
-            //组装对应频率日期下的节目单详情参数
-            for(ProgramInfoDTO programInfoDTO : programInfoDTOS){
+            //默认该频率下没有节目单
                 channelMap.put("update_id", "");
                 channelMap.put("isprograms", 0);
                 channelMap.put("live", "");
                 channelMap.put("time", "");
+
+            //组装对应频率日期下的节目单详情参数
+            for(ProgramInfoDTO programInfoDTO : programInfoDTOS){
                 if(programInfoDTO.getChannelId().equals(channelInfoDTO.getChannelId())){
                     try {
                         this.assembedProgramParams(programInfoDTO, channelMap);
@@ -116,8 +117,7 @@ public class ChannelInfoController {
             String endDate = job.getString("end");
             channelMap.put("update_id", programInfoDTO.getPrograminfoId());
             channelMap.put("isprograms", isProgram);
-            channelMap.put("live", "");
-            channelMap.put("time", "");
+
             //得到属于当前时间的时间段的节目详情
             if(this.hourMinuteBetween(nowDate, startDate, endDate)){
                 channelMap.put("update_id", programInfoDTO.getPrograminfoId());
@@ -133,7 +133,7 @@ public class ChannelInfoController {
 
 
     /**
-     *
+     * 判断当前时间是否在节目开始结束时间之内
      * @param nowDate   要比较的时间
      * @param startDate   开始时间
      * @param endDate   结束时间
