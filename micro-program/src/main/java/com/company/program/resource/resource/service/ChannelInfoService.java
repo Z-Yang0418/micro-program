@@ -18,4 +18,11 @@ public interface ChannelInfoService {
      * @return
      */
     List<ChannelInfoDTO> getChannelInfoByClassId(String classId);
+
+    /**
+     * 根据频率Id查询频率
+     * @param channelId
+     * @return
+     */
+    List<ChannelInfoDTO> getChannelInfoById(String channelId);
 }

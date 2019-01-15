@@ -34,8 +34,8 @@ public class ProgramInfoServiceImpl implements ProgramInfoService {
     }
 
     @Override
-    public List<ProgramInfoDTO> getProgramInfoByDate() {
-        return convertChannelInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(new Date()));
+    public List<ProgramInfoDTO> getProgramInfoByDate(Date date) {
+        return convertChannelInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(date));
     }
 
 

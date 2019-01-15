@@ -10,6 +10,7 @@ import com.company.program.resource.resource.service.ProgramInfoService;
 import com.company.program.resource.util.MapUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +24,11 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @RestController
-@RequestMapping(value = "/get/live")
-@Api(value = "频率信息", tags = "ChannelInfoApi", description="频率信息")
-public class ChannelInfoController {
+@RequestMapping(value = "/get/vod")
+@Api(value = "/get/vod路径接口集合", tags = "GetVodApi", description="/get/vod路径接口集合")
+public class GetVodController {
 
-    private static final Logger logger = LoggerFactory.getLogger(ChannelInfoController.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetVodController.class);
 
     @Autowired
     private ChannelInfoService channelInfoService;
@@ -35,20 +36,24 @@ public class ChannelInfoController {
     @Autowired
     private ProgramInfoService programInfoService;
 
-    @ApiOperation("指定频率类别列表接口")
-    @ApiImplicitParam(name = "classId", value = "根据classId查询频率", required = true, dataType = "String", paramType="path")
-    @GetMapping(value = {"/class/{classId}", "/class"})
-    public List<Map> getUserInfoByClassId(@PathVariable(value = "classId", required = false) String classId) {
+    @ApiOperation("点播接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "channelId", value = "频率id", required = false, dataType = "String", paramType="path"),
+            @ApiImplicitParam(name = "timestamp", value = "当前时间戳", required = false, dataType = "String", paramType="path")
+    })
+    @GetMapping(value = {"/{channelId}/{timestamp}", "/{channelId}", "/"})
+    public List<Map> getLiveByClassId(@PathVariable(value = "channelId", required = false) String channelId,
+                                      @PathVariable(value = "timestamp", required = false) String timestamp){
+
         List<Map> channelMapList = new ArrayList<>();
-        List<ChannelInfoDTO> channelInfoList = channelInfoService.getChannelInfoByClassId(classId);
+        List<ChannelInfoDTO> channelInfoList = channelInfoService.getChannelInfoById(channelId);
         //获取当前日期下所有节目单信息
-        List<ProgramInfoDTO> programInfoDTOS = programInfoService.getProgramInfoByDate();
+        List<ProgramInfoDTO> programInfoDTOS = programInfoService.getProgramInfoByDate(new Date());
 
 
         //提取并转化成与原接口一致的标准参数
         for(ChannelInfoDTO channelInfoDTO : channelInfoList){
             Map channelMap = new LinkedHashMap();
-
             String channelInfoJsonStr = channelInfoDTO.getChannelInfo();
             //将channelInfo字段内的json数据转为object
             JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
@@ -75,10 +80,10 @@ public class ChannelInfoController {
             }
 
             //默认该频率下没有节目单
-                channelMap.put("update_id", "");
-                channelMap.put("isprograms", 0);
-                channelMap.put("live", "");
-                channelMap.put("time", "");
+            channelMap.put("update_id", "");
+            channelMap.put("isprograms", 0);
+            channelMap.put("live", "");
+            channelMap.put("time", "");
 
             //组装对应频率日期下的节目单详情参数
             for(ProgramInfoDTO programInfoDTO : programInfoDTOS){
@@ -86,7 +91,7 @@ public class ChannelInfoController {
                     try {
                         this.assembedProgramParams(programInfoDTO, channelMap);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage());
                     }
                 }
 
@@ -96,6 +101,7 @@ public class ChannelInfoController {
         }
 
         return channelMapList;
+
     }
 
 
@@ -154,5 +160,4 @@ public class ChannelInfoController {
 
         return nowTime >= startTime && nowTime <= endTime;
     }
-
 }

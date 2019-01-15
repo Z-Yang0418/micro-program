@@ -12,4 +12,12 @@ public interface ChannelInfoRepository extends JpaSpecificationExecutor<ChannelI
 
     @Query(value="SELECT * FROM hndt_channel_table WHERE FIND_IN_SET(?1, class_id)",nativeQuery=true)
     List<ChannelInfo> findByClassId(Long classId);
+
+
+    /**
+     *  方法命名自动匹配
+     * @param
+     * @return
+     */
+    List<ChannelInfo> findByChannelId(Long channelId);
 }

@@ -4,6 +4,7 @@ package com.company.program.resource.resource.service;
 
 import com.company.program.resource.resource.dto.ProgramInfoDTO;
 
+import java.util.Date;
 import java.util.List;
 
 public interface ProgramInfoService {
@@ -20,5 +21,5 @@ public interface ProgramInfoService {
      * @param
      * @return
      */
-    List<ProgramInfoDTO> getProgramInfoByDate();
+    List<ProgramInfoDTO> getProgramInfoByDate(Date date);
 }

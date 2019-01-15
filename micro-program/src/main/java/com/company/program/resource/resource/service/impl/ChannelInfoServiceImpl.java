@@ -35,6 +35,14 @@ public class ChannelInfoServiceImpl implements ChannelInfoService {
         return convertChannelInfoEntityToDTOs(channelInfoRepository.findByClassId(class_id));
     }
 
+    @Override
+    public List<ChannelInfoDTO> getChannelInfoById(String channelId) {
+        if (StringUtils.isBlank(channelId)){
+            channelId = "1";
+        }
+        long channel_id = Long.parseLong(channelId);
+        return convertChannelInfoEntityToDTOs(channelInfoRepository.findByChannelId(channel_id));
+    }
 
 
 
