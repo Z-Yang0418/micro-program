@@ -111,7 +111,7 @@ public class GetLiveServiceImpl implements GetLiveService {
      */
     private void assembedProgramParams(ProgramInfoDTO programInfoDTO, Map channelMap) throws Exception {
         channelMap.put("update_id", programInfoDTO.getPrograminfoId());
-        JSONArray jsonArr = FastJsonUtils.parseArray(programInfoDTO.getPrograminfoInfo());
+        JSONArray jsonArr = FastJsonUtils.parseArray(programInfoDTO.getPrograminfoInfo().trim());
         int isProgram = 1;
         for (Iterator iterator = jsonArr.iterator(); iterator.hasNext();) {
             JSONObject job = (JSONObject) iterator.next();

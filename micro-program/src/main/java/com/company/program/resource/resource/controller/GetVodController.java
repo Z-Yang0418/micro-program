@@ -27,8 +27,8 @@ public class GetVodController {
             @ApiImplicitParam(name = "timestamp", value = "当前时间戳", required = false, dataType = "String", paramType="path")
     })
     @GetMapping(value = {"/{channelId}/{timestamp}", "/{channelId}", "/"})
-    public List<Map> getLiveByClassId(@PathVariable(value = "channelId", required = false) String channelId,
-                                      @PathVariable(value = "timestamp", required = false) String timestamp){
+    public Map getLiveByClassId(@PathVariable(value = "channelId", required = false) String channelId,
+                                @PathVariable(value = "timestamp", required = false) String timestamp){
 
 
         return getVodService.getVodByChannelIdAndTimestamp(channelId, timestamp);

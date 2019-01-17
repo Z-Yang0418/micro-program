@@ -2,7 +2,6 @@
 
 package com.company.program.resource.resource.service;
 
-import java.util.List;
 import java.util.Map;
 
 public interface GetVodService {
@@ -13,5 +12,5 @@ public interface GetVodService {
      * @param timestamp
      * @return
      */
-    List<Map> getVodByChannelIdAndTimestamp(String channelId, String timestamp);
+    Map getVodByChannelIdAndTimestamp(String channelId, String timestamp);
 }
