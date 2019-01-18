@@ -8,10 +8,13 @@ import com.company.program.resource.resource.common.util.DateUtil;
 import com.company.program.resource.resource.common.util.FastJsonUtils;
 import com.company.program.resource.resource.dto.ChannelInfoDTO;
 import com.company.program.resource.resource.dto.ProgramInfoDTO;
+import com.company.program.resource.resource.dto.ProgramListDTO;
 import com.company.program.resource.resource.entity.ChannelInfo;
 import com.company.program.resource.resource.entity.ProgramInfo;
+import com.company.program.resource.resource.entity.ProgramList;
 import com.company.program.resource.resource.respository.ChannelInfoRepository;
 import com.company.program.resource.resource.respository.ProgramInfoRepository;
+import com.company.program.resource.resource.respository.ProgramListRepository;
 import com.company.program.resource.resource.service.GetVodService;
 import com.company.program.resource.util.MapUtil;
 import lombok.Data;
@@ -38,6 +41,8 @@ public class GetVodServiceImpl implements GetVodService {
     private ChannelInfoRepository channelInfoRepository;
     @Autowired
     private ProgramInfoRepository programInfoRepository;
+    @Autowired
+    private ProgramListRepository programListRepository;
 
     @Value("${playURL.prefix}")
     private String playURLPrefix;
@@ -52,6 +57,11 @@ public class GetVodServiceImpl implements GetVodService {
 
     @Override
     public Map getVodByChannelIdAndTimestamp(String channelId, String timestamp) {
+        String weekStr = ""; //得到当前周数
+        boolean isFuture = false;
+        long time_stamp = 0;
+        List<ProgramInfoDTO> programInfoList = null;
+        List<ProgramListDTO> programListDTOs = null;
         Map channelMap = new LinkedHashMap();
         if (StringUtils.isBlank(channelId)){
             channelId = "1";
@@ -64,12 +74,21 @@ public class GetVodServiceImpl implements GetVodService {
         if(StringUtils.isBlank(timestamp)){
             channelDate = new Date();
         }else{
+            time_stamp = Long.parseLong(timestamp);
             channelDate = DateUtil.timeStampToDate(timestamp, channelTimeFormat);
+            weekStr = DateUtil.parseDateToWeek(channelDate);
+            //判断传入的时间是否在当前日期之后/天
+            isFuture = DateUtil.isFutureDay(channelDate);
         }
-        List<ProgramInfoDTO> programInfoList = convertProgramInfoEntityToDTOs(programInfoRepository.findByChannelIdAndPrograminfoDate(channel_id, channelDate));
+        //得到传入时间得星期数
+        if(!isFuture){//如果是当天或者之前的，则读节目单日志表
+            programInfoList = convertProgramInfoEntityToDTOs(programInfoRepository.findByChannelIdAndPrograminfoDate(channel_id, channelDate));
+        }else{
+            programListDTOs = convertProgramListEntityToDTOs(programListRepository.findByChannelIdAndWeekdayAndValidTime(channel_id, weekStr, time_stamp));
+        }
 
 
-        //提取并转化成与原接口一致的标准参数
+        //提取频率表信息并转化成与原接口一致的标准参数
         String channelInfoJsonStr = channelInfoList.get(0).getChannelInfo();
         //将channelInfo字段内的json数据转为object
         JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
@@ -96,30 +115,32 @@ public class GetVodServiceImpl implements GetVodService {
         }
 
         //默认该频率下没有节目单
-        channelMap.put("update_id", "");
+        channelMap.put("update_id", 0);
         channelMap.put("isprograms", 0);
         channelMap.put("live", "");
         channelMap.put("time", "");
 
-        try {
-            //组装对应频率日期下正在播出的节目单详情参数
-            this.assembedProgramParams(programInfoList.get(0), channelMap);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
+        if(!isFuture && programInfoList.size()!=0){
+            try {
+                //组装对应频率日期下正在播出的节目单详情参数
+                this.assembedProgramInfoParams(programInfoList.get(0), channelMap);
+                //组装该频道下的所有节目单详情信息
+                this.assembedProgramInfosParams(programInfoList.get(0), channelMap);
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+            }
         }
-        //组装该频道下的所有节目单详情信息
-        this.assembedProgramsParams(programInfoList.get(0), channelMap);
         return MapUtil.nullToEmpty(channelMap);
     }
 
 
     /**
-     * 将频率下正在播出的节目参数，组装进接口
+     * 将频率下正在播出的节目单详情参数组装进接口
      * @param programInfoDTO
      * @param channelMap
      * @throws Exception
      */
-    private void assembedProgramParams(ProgramInfoDTO programInfoDTO, Map channelMap) throws Exception {
+    private void assembedProgramInfoParams(ProgramInfoDTO programInfoDTO, Map channelMap) throws Exception {
         channelMap.put("update_id", programInfoDTO.getPrograminfoId());
         JSONArray jsonArr = FastJsonUtils.parseArray(programInfoDTO.getPrograminfoInfo().trim());
         int isProgram = 1;
@@ -145,13 +166,12 @@ public class GetVodServiceImpl implements GetVodService {
 
     }
 
-
     /**
      * 将该频率下对应日期的节目单详情参数组装进接口
      * @param programInfoDTO
      * @param channelMap
      */
-    private void assembedProgramsParams(ProgramInfoDTO programInfoDTO, Map channelMap) {
+    private void assembedProgramInfosParams(ProgramInfoDTO programInfoDTO, Map channelMap) {
         List<Map> programMapList = new ArrayList(50);
         JSONArray jsonArr = FastJsonUtils.parseArray(programInfoDTO.getPrograminfoInfo().trim());
         for (Iterator iterator = jsonArr.iterator(); iterator.hasNext();) {
@@ -234,6 +254,20 @@ public class GetVodServiceImpl implements GetVodService {
         List<ProgramInfoDTO> dtos = new ArrayList<>();
         for(ProgramInfo e : entitys){
             dtos.add(convertProgramInfoEntityToDTO(e));
+        }
+        return dtos;
+    }
+
+    private ProgramListDTO convertProgramListEntityToDTO(ProgramList entity){
+        ProgramListDTO dto = new ProgramListDTO();
+        BeanUtils.copyProperties(entity, dto);
+        return dto;
+    }
+
+    private List<ProgramListDTO> convertProgramListEntityToDTOs(List<ProgramList> entitys){
+        List<ProgramListDTO> dtos = new ArrayList<>();
+        for(ProgramList e : entitys){
+            dtos.add(convertProgramListEntityToDTO(e));
         }
         return dtos;
     }
