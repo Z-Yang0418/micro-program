@@ -129,10 +129,20 @@ public class GetVodServiceImpl implements GetVodService {
             } catch (Exception e) {
                 logger.error(e.getMessage());
             }
+        }else if(isFuture && programListDTOs.size()!=0){
+            try {
+                //组装对应频率日期下正在播出的节目单详情参数
+                this.assembedProgramListParams(programListDTOs.get(0), channelMap);
+                //组装该频道下的所有节目单详情信息
+                this.assembedProgramListsParams(programListDTOs.get(0), channelMap, channelDate);
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+            }
         }
         return MapUtil.nullToEmpty(channelMap);
     }
 
+    //------------------------------------组装节目单详情参数start--------------------------------------
 
     /**
      * 将频率下正在播出的节目单详情参数组装进接口
@@ -165,6 +175,7 @@ public class GetVodServiceImpl implements GetVodService {
         }
 
     }
+
 
     /**
      * 将该频率下对应日期的节目单详情参数组装进接口
@@ -204,7 +215,77 @@ public class GetVodServiceImpl implements GetVodService {
         channelMap.put("programs", programMapList);
     }
 
+    //-------------------------------------------组装节目单详情参数end---------------------------------
+    //-------------------------------------------组装节目单模板参数start-------------------------------
 
+    /**
+     * 将频率下正在播出的节目单模板参数组装进接口
+     * @param programListDTO
+     * @param channelMap
+     * @throws Exception
+     */
+    private void assembedProgramListParams(ProgramListDTO programListDTO, Map channelMap) throws Exception {
+        channelMap.put("update_id", 0);    //因为没走节目单日志表，所以日志id为0
+        JSONArray jsonArr = FastJsonUtils.parseArray(programListDTO.getProgramlistInfo().trim());
+        int isProgram = 1;
+        for (Iterator iterator = jsonArr.iterator(); iterator.hasNext();) {
+            JSONObject job = (JSONObject) iterator.next();
+            SimpleDateFormat format = new SimpleDateFormat("HH:mm");
+            String nowDate = format.format(new Date());
+            String startDate = job.getString("start");
+            String endDate = job.getString("end");
+            channelMap.put("update_id", 0);
+            channelMap.put("isprograms", isProgram);
+
+            //得到属于当前时间的时间段的节目详情
+            if(this.hourMinuteBetween(nowDate, startDate, endDate)){
+//                channelMap.put("update_id", 0);
+                channelMap.put("isprograms", isProgram);
+                channelMap.put("live", job.getString("title"));
+                channelMap.put("time", startDate+"-"+endDate);
+                break;
+            }
+
+        }
+
+    }
+
+
+    /**
+     * 将该频率下对应日期的节目单模板参数组装进接口
+     * @param programListDTO
+     * @param channelMap
+     */
+    private void assembedProgramListsParams(ProgramListDTO programListDTO, Map channelMap, Date channelDate) {
+        List<Map> programMapList = new ArrayList(50);
+        JSONArray jsonArr = FastJsonUtils.parseArray(programListDTO.getProgramlistInfo().trim());
+        for (Iterator iterator = jsonArr.iterator(); iterator.hasNext();) {
+            JSONObject job = (JSONObject) iterator.next();
+            Map map = new LinkedHashMap();
+            String programTimeFormat = "yyyy-MM-dd HH:mm";
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String timeStampToDayStr = sdf.format(channelDate);
+            String beginTime = timeStampToDayStr+" "+job.getString("start");
+            String endTime = timeStampToDayStr+" "+job.getString("end");
+            map.put("beginTime", DateUtil.date2TimeStamp(beginTime, programTimeFormat));
+            map.put("endTime", DateUtil.date2TimeStamp(endTime, programTimeFormat));
+            map.put("title", job.getString("title"));
+            //以下字段无用，为保持返回值格式，置空
+            map.put("signa", "");
+
+            map.put("playUrl", new String[]{""});
+            map.put("downloadUrl", new String[]{""});
+//            if(job.containsKey("comperename")){
+//                map.put("comperename", job.getString("comperename"));
+//            }
+            map.put("compere",  new String[]{""});
+
+            programMapList.add(map);
+        }
+        channelMap.put("programs", programMapList);
+    }
+
+    //-------------------------------------------组装节目单模板参数end-------------------------------
     /**
      * 判断当前时间是否在节目开始结束时间之内
      * @param nowDate   要比较的时间
