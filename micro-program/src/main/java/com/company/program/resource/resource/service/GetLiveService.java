@@ -13,4 +13,10 @@ public interface GetLiveService {
      * @return
      */
     List<Map> getLiveByClassId(String classId);
+
+    /**
+     * 获得全部频率列表接口
+     * @return
+     */
+    List<Map> getLive();
 }

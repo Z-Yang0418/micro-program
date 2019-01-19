@@ -36,6 +36,11 @@ public class GetLiveServiceImpl implements GetLiveService {
     private ProgramInfoRepository programInfoRepository;
 
 
+    /**
+     * 指定频率列表接口方法
+     * @param classId
+     * @return
+     */
     @Override
     public List<Map> getLiveByClassId(String classId) {
         List<Map> channelMapList = new ArrayList<>();
@@ -100,7 +105,73 @@ public class GetLiveServiceImpl implements GetLiveService {
         return channelMapList;
     }
 
+    /**
+     * 全部频率列表接口方法
+     * @return
+     */
+    @Override
+    public List<Map> getLive() {
+        List<Map> channelMapList = new ArrayList<>();
 
+        List<ChannelInfoDTO> channelInfoList = convertChannelInfoEntityToDTOs(channelInfoRepository.findAllLive());
+        //获取当前日期下所有节目单信息
+        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(new Date()));
+
+        //提取并转化成与原接口一致的标准参数
+        for(ChannelInfoDTO channelInfoDTO : channelInfoList){
+            Map channelMap = new LinkedHashMap();
+            String channelInfoJsonStr = channelInfoDTO.getChannelInfo();
+            //将channelInfo字段内的json数据转为object
+            JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
+            channelMap.put("cid", channelInfoDTO.getChannelId());
+            channelMap.put("description", channelJsonObj.getString("desc"));
+            channelMap.put("image", channelJsonObj.getString("logo"));
+            channelMap.put("name", channelInfoDTO.getChannelName());
+            channelMap.put("hotline", channelJsonObj.getString("channel_hotline"));
+            if (channelJsonObj.containsKey("interact")){
+                channelMap.put("interact", channelJsonObj.getString("interact_set"));
+            } else {
+                channelMap.put("interact", "0");
+            }
+
+            if(channelJsonObj.containsKey("streams")){
+                channelMap.put("streams", new String[]{channelJsonObj.getString("streams")});
+            } else {
+                channelMap.put("streams", "");
+            }
+            if(channelJsonObj.containsKey("video_streams")){
+                channelMap.put("video_streams", new String[]{channelJsonObj.getString("video_streams")});
+            } else {
+                channelMap.put("video_streams", new String[]{""});
+            }
+
+            //默认该频率下没有节目单
+            channelMap.put("update_id", "");
+            channelMap.put("isprograms", 0);
+            channelMap.put("live", "");
+            channelMap.put("time", "");
+
+            //组装对应频率日期下的节目单详情参数
+            for(ProgramInfoDTO programInfoDTO : programInfoDTOS){
+                if(programInfoDTO.getChannelId().equals(channelInfoDTO.getChannelId())){
+                    try {
+                        this.assembedProgramParams(programInfoDTO, channelMap);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+                    }
+                }
+
+            }
+
+            channelMapList.add(MapUtil.nullToEmpty(channelMap));
+        }
+
+        return channelMapList;
+    }
+
+
+
+    //-------------------------------共有方法----------------------------------------------
 
 
     /**

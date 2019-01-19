@@ -30,4 +30,11 @@ public class GetLiveController {
         return getLiveService.getLiveByClassId(classId);
     }
 
+    @ApiOperation("全部频率列表接口")
+    @ApiImplicitParam(name = "classId", value = "频率所属分类ID", required = false, dataType = "String", paramType="path")
+    @GetMapping(value = "")
+    public List<Map> getLive() {
+        return getLiveService.getLive();
+    }
+
 }

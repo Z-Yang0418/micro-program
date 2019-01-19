@@ -10,8 +10,11 @@ import java.util.List;
 
 public interface ChannelInfoRepository extends JpaSpecificationExecutor<ChannelInfo>,JpaRepository<ChannelInfo, Long> {
 
-    @Query(value="SELECT * FROM hndt_channel_table WHERE FIND_IN_SET(?1, class_id)",nativeQuery=true)
+    @Query(value="SELECT * FROM hndt_channel_table WHERE FIND_IN_SET(?1, class_id) AND status=1",nativeQuery=true)
     List<ChannelInfo> findByClassId(Long classId);
+
+    @Query(value="SELECT * FROM hndt_channel_table WHERE status=1",nativeQuery=true)
+    List<ChannelInfo> findAllLive();
 
 
     /**
@@ -20,4 +23,5 @@ public interface ChannelInfoRepository extends JpaSpecificationExecutor<ChannelI
      * @return
      */
     List<ChannelInfo> findByChannelId(Long channelId);
+
 }
