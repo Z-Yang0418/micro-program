@@ -16,12 +16,13 @@ public interface ChannelInfoRepository extends JpaSpecificationExecutor<ChannelI
     @Query(value="SELECT * FROM hndt_channel_table WHERE status=1",nativeQuery=true)
     List<ChannelInfo> findAllLive();
 
+    @Query(value="SELECT * FROM hndt_channel_table WHERE channel_id=?1 AND status=1",nativeQuery=true)
+    List<ChannelInfo> findByChannelId(Long channelId);
 
     /**
      *  方法命名自动匹配
      * @param
      * @return
      */
-    List<ChannelInfo> findByChannelId(Long channelId);
 
 }

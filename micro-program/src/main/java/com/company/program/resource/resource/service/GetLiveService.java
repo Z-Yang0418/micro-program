@@ -19,4 +19,11 @@ public interface GetLiveService {
      * @return
      */
     List<Map> getLive();
+
+    /**
+     * 获得指定频率列表接口
+     * @param channelId
+     * @return
+     */
+    List<Map> getLiveByChannelId(String channelId);
 }

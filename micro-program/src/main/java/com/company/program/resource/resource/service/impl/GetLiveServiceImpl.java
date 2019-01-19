@@ -4,6 +4,7 @@ package com.company.program.resource.resource.service.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.company.program.resource.resource.common.util.DateUtil;
 import com.company.program.resource.resource.common.util.FastJsonUtils;
 import com.company.program.resource.resource.dto.ChannelInfoDTO;
 import com.company.program.resource.resource.dto.ProgramInfoDTO;
@@ -169,6 +170,75 @@ public class GetLiveServiceImpl implements GetLiveService {
         return channelMapList;
     }
 
+    /**
+     * 获得指定频率列表接口方法
+     * @param channelId
+     * @return
+     */
+    @Override
+    public List<Map> getLiveByChannelId(String channelId) {
+        List<Map> channelMapList = new ArrayList<>();
+        if (StringUtils.isBlank(channelId)){
+            channelId = "1";
+        }
+        long channel_id = Long.parseLong(channelId);
+        List<ChannelInfoDTO> channelInfoList = convertChannelInfoEntityToDTOs(channelInfoRepository.findByChannelId(channel_id));
+        //获取当前日期下所有节目单信息
+        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(new Date()));
+
+        //提取并转化成与原接口一致的标准参数
+        for(ChannelInfoDTO channelInfoDTO : channelInfoList){
+            Map channelMap = new LinkedHashMap();
+            String channelInfoJsonStr = channelInfoDTO.getChannelInfo();
+            //将channelInfo字段内的json数据转为object
+            JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
+            channelMap.put("cid", channelInfoDTO.getChannelId());
+            channelMap.put("description", channelJsonObj.getString("desc"));
+            channelMap.put("image", channelJsonObj.getString("logo"));
+            channelMap.put("hotline", channelJsonObj.getString("channel_hotline"));
+            if (channelJsonObj.containsKey("interact")){
+                channelMap.put("interact", channelJsonObj.getString("interact_set"));
+            } else {
+                channelMap.put("interact", "");
+            }
+            channelMap.put("name", channelInfoDTO.getChannelName());
+
+            if(channelJsonObj.containsKey("streams")){
+                channelMap.put("streams", new String[]{channelJsonObj.getString("streams")});
+            } else {
+                channelMap.put("streams", "");
+            }
+            if(channelJsonObj.containsKey("video_streams")){
+                channelMap.put("video_streams", new String[]{channelJsonObj.getString("video_streams")});
+            } else {
+                channelMap.put("video_streams", new String[]{""});
+            }
+
+            //默认该频率下没有节目单
+            channelMap.put("update_id", "");
+            channelMap.put("isprograms", 0);
+            channelMap.put("live", "");
+            channelMap.put("time", "");
+
+            //组装对应频率、日期下的节目单详情参数
+            for(ProgramInfoDTO programInfoDTO : programInfoDTOS){
+                if(programInfoDTO.getChannelId().equals(channelInfoDTO.getChannelId())){
+                    try {
+                        this.assembedProgramParams(programInfoDTO, channelMap);
+                        //组装该频道下的所有节目单详情信息
+                        this.assembedProgramInfosParams(programInfoDTO, channelMap);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+                    }
+                }
+
+            }
+
+            channelMapList.add(MapUtil.nullToEmpty(channelMap));
+        }
+
+        return channelMapList;
+    }
 
 
     //-------------------------------共有方法----------------------------------------------
@@ -204,6 +274,31 @@ public class GetLiveServiceImpl implements GetLiveService {
 
         }
 
+    }
+
+    /**
+     * 将该频率下对应日期的节目单详情参数组装进接口
+     * @param programInfoDTO
+     * @param channelMap
+     */
+    private void assembedProgramInfosParams(ProgramInfoDTO programInfoDTO, Map channelMap) {
+        List<Map> programMapList = new ArrayList(50);
+        JSONArray jsonArr = FastJsonUtils.parseArray(programInfoDTO.getPrograminfoInfo().trim());
+        for (Iterator iterator = jsonArr.iterator(); iterator.hasNext();) {
+            JSONObject job = (JSONObject) iterator.next();
+            Map map = new LinkedHashMap();
+            String programTimeFormat = "yyyy-MM-dd HH:mm";
+            String beginTime = programInfoDTO.getPrograminfoDate()+" "+job.getString("start");
+            String endTime = programInfoDTO.getPrograminfoDate()+" "+job.getString("end");
+            map.put("beginTime", DateUtil.date2TimeStamp(beginTime, programTimeFormat));
+            map.put("endTime", DateUtil.date2TimeStamp(endTime, programTimeFormat));
+            map.put("title", job.getString("title"));
+            map.put("signa", job.getString("signa"));
+
+
+            programMapList.add(map);
+        }
+        channelMap.put("programs", programMapList);
     }
 
 

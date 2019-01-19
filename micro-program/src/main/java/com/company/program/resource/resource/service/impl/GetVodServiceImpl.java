@@ -68,75 +68,78 @@ public class GetVodServiceImpl implements GetVodService {
         }
         long channel_id = Long.parseLong(channelId);
         List<ChannelInfoDTO> channelInfoList = convertChannelInfoEntityToDTOs(channelInfoRepository.findByChannelId(channel_id));
-        //获取当前频道，日期下所有节目单信息
-        String channelTimeFormat = "yyyy-MM-dd";
-        Date channelDate;
-        if(StringUtils.isBlank(timestamp)){
-            channelDate = new Date();
-        }else{
-            time_stamp = Long.parseLong(timestamp);
-            channelDate = DateUtil.timeStampToDate(timestamp, channelTimeFormat);
-            weekStr = DateUtil.parseDateToWeek(channelDate);
-            //判断传入的时间是否在当前日期之后/天
-            isFuture = DateUtil.isFutureDay(channelDate);
-        }
-        //得到传入时间得星期数
-        if(!isFuture){//如果是当天或者之前的，则读节目单日志表
-            programInfoList = convertProgramInfoEntityToDTOs(programInfoRepository.findByChannelIdAndPrograminfoDate(channel_id, channelDate));
-        }else{
-            programListDTOs = convertProgramListEntityToDTOs(programListRepository.findByChannelIdAndWeekdayAndValidTime(channel_id, weekStr, time_stamp));
-        }
-
-
-        //提取频率表信息并转化成与原接口一致的标准参数
-        String channelInfoJsonStr = channelInfoList.get(0).getChannelInfo();
-        //将channelInfo字段内的json数据转为object
-        JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
-        channelMap.put("cid", channelInfoList.get(0).getChannelId());
-        channelMap.put("description", channelJsonObj.getString("desc"));
-        channelMap.put("image", channelJsonObj.getString("logo"));
-        channelMap.put("name", channelInfoList.get(0).getChannelName());
-        channelMap.put("hotline", channelJsonObj.getString("channel_hotline"));
-        if (channelJsonObj.containsKey("interact")){
-            channelMap.put("interact", channelJsonObj.getString("interact_set"));
-        } else {
-            channelMap.put("interact", "0");
-        }
-
-        if(channelJsonObj.containsKey("streams")){
-            channelMap.put("streams", new String[]{channelJsonObj.getString("streams")});
-        } else {
-            channelMap.put("streams", "");
-        }
-        if(channelJsonObj.containsKey("video_streams")){
-            channelMap.put("video_streams", new String[]{channelJsonObj.getString("video_streams")});
-        } else {
-            channelMap.put("video_streams", new String[]{""});
-        }
-
-        //默认该频率下没有节目单
-        channelMap.put("update_id", 0);
-        channelMap.put("isprograms", 0);
-        channelMap.put("live", "");
-        channelMap.put("time", "");
-
-        if(!isFuture && programInfoList.size()!=0){
-            try {
-                //组装对应频率日期下正在播出的节目单详情参数
-                this.assembedProgramInfoParams(programInfoList.get(0), channelMap);
-                //组装该频道下的所有节目单详情信息
-                this.assembedProgramInfosParams(programInfoList.get(0), channelMap);
-            } catch (Exception e) {
-                logger.error(e.getMessage());
+        //如果有复合条件的频率信息
+        if(channelInfoList.size() != 0) {
+            //获取当前频道，日期下所有节目单信息
+            String channelTimeFormat = "yyyy-MM-dd";
+            Date channelDate;
+            if(StringUtils.isBlank(timestamp)){
+                channelDate = new Date();
+            }else{
+                time_stamp = Long.parseLong(timestamp);
+                channelDate = DateUtil.timeStampToDate(timestamp, channelTimeFormat);
+                weekStr = DateUtil.parseDateToWeek(channelDate);
+                //判断传入的时间是否在当前日期之后/天
+                isFuture = DateUtil.isFutureDay(channelDate);
             }
-        }else if(isFuture && programListDTOs.size()!=0){
-            try {
-                //组装对应频率日期下正在播出的节目单详情参数
-                this.assembedProgramListParams(programListDTOs.get(0), channelMap);
-                //组装该频道下的所有节目单详情信息
-                this.assembedProgramListsParams(programListDTOs.get(0), channelMap, channelDate);
-            } catch (Exception e) {
-                logger.error(e.getMessage());
+            //得到传入时间得星期数
+            if(!isFuture){//如果是当天或者之前的，则读节目单日志表
+                programInfoList = convertProgramInfoEntityToDTOs(programInfoRepository.findByChannelIdAndPrograminfoDate(channel_id, channelDate));
+            }else{
+                programListDTOs = convertProgramListEntityToDTOs(programListRepository.findByChannelIdAndWeekdayAndValidTime(channel_id, weekStr, time_stamp));
+            }
+
+            //提取频率表信息并转化成与原接interact口一致的标准参数
+            String channelInfoJsonStr = channelInfoList.get(0).getChannelInfo();
+            //将channelInfo字段内的json数据转为object
+            JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
+            channelMap.put("cid", channelInfoList.get(0).getChannelId());
+            channelMap.put("description", channelJsonObj.getString("desc"));
+            channelMap.put("image", channelJsonObj.getString("logo"));
+            channelMap.put("name", channelInfoList.get(0).getChannelName());
+            channelMap.put("hotline", channelJsonObj.getString("channel_hotline"));
+//        点播没有互动参数
+//        if (channelJsonObj.containsKey("interact")){
+//            channelMap.put("interact", channelJsonObj.getString("interact_set"));
+//        } else {
+//            channelMap.put("interact", "0");
+//        }
+
+            if (channelJsonObj.containsKey("streams")) {
+                channelMap.put("streams", new String[]{channelJsonObj.getString("streams")});
+            } else {
+                channelMap.put("streams", "");
+            }
+            if (channelJsonObj.containsKey("video_streams")) {
+                channelMap.put("video_streams", new String[]{channelJsonObj.getString("video_streams")});
+            } else {
+                channelMap.put("video_streams", new String[]{""});
+            }
+
+            //默认该频率下没有节目单
+            channelMap.put("update_id", 0);
+            channelMap.put("isprograms", 0);
+            channelMap.put("live", "");
+            channelMap.put("time", "");
+
+            if (!isFuture && programInfoList.size() != 0) {
+                try {
+                    //组装对应频率日期下正在播出的节目单详情参数
+                    this.assembedProgramInfoParams(programInfoList.get(0), channelMap);
+                    //组装该频道下的所有节目单详情信息
+                    this.assembedProgramInfosParams(programInfoList.get(0), channelMap);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
+            } else if (isFuture && programListDTOs.size() != 0) {
+                try {
+                    //组装对应频率日期下正在播出的节目单详情参数
+                    this.assembedProgramListParams(programListDTOs.get(0), channelMap);
+                    //组装该频道下的所有节目单详情信息
+                    this.assembedProgramListsParams(programListDTOs.get(0), channelMap, channelDate);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
             }
         }
         return MapUtil.nullToEmpty(channelMap);
