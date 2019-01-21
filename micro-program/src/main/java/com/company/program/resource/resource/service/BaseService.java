@@ -2,6 +2,9 @@
 
 package com.company.program.resource.resource.service;
 
+import com.company.program.resource.resource.dto.ProgramInfoDTO;
+import com.company.program.resource.resource.entity.ProgramInfo;
+
 public interface BaseService {
 
     /**
@@ -9,5 +12,5 @@ public interface BaseService {
      * @param channelId
      * @return
      */
-    void putProListInProInfo(Long channelId, String channelName);
+    ProgramInfoDTO putProListInProInfo(Long channelId, String channelName);
 }

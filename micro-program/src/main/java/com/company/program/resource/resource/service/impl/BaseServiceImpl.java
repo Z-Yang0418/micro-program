@@ -3,6 +3,7 @@
 package com.company.program.resource.resource.service.impl;
 
 import com.company.program.resource.resource.common.util.DateUtil;
+import com.company.program.resource.resource.dto.ProgramInfoDTO;
 import com.company.program.resource.resource.dto.ProgramListDTO;
 import com.company.program.resource.resource.entity.ProgramInfo;
 import com.company.program.resource.resource.entity.ProgramList;
@@ -29,15 +30,13 @@ public class BaseServiceImpl implements BaseService {
     private static final Logger logger = LoggerFactory.getLogger(BaseServiceImpl.class);
 
     @Autowired
-    private ChannelInfoRepository channelInfoRepository;
-    @Autowired
     private ProgramInfoRepository programInfoRepository;
     @Autowired
     private ProgramListRepository programListRepository;
 
 
     @Override
-    public void putProListInProInfo(Long channelId, String channelName) {
+    public ProgramInfoDTO putProListInProInfo(Long channelId, String channelName) {
         String weekStr = DateUtil.parseDateToWeek(new Date()); //得到当前周数
         String timeStamp = DateUtil.timeStamp();    //取得当前时间戳
         long time_stamp = Long.parseLong(timeStamp);
@@ -49,14 +48,14 @@ public class BaseServiceImpl implements BaseService {
             List<ProgramList> programListList = convertProgramListDTOToEntity(programListDTOs);
             ProgramList programList = programListList.get(0);
             ProgramInfo programInfo = new ProgramInfo();
-            programInfo.setPrograminfoName(nowDate+" "+channelName+"节目单test111");
+            programInfo.setPrograminfoName(nowDate+" "+channelName+"节目单test");
             programInfo.setChannelId(channelId);
             programInfo.setPrograminfoInfo(programList.getProgramlistInfo());
             programInfo.setPrograminfoDate(new Date());
-
+            programInfoRepository.save(programInfo);
+            return convertProgramInfoEntityToDTO(programInfo);
         }
-
-
+        return null;
     }
 
 
@@ -92,5 +91,11 @@ public class BaseServiceImpl implements BaseService {
             entitys.add(convertProgramListDTOToEntity(d));
         }
         return  entitys;
+    }
+
+    private ProgramInfoDTO convertProgramInfoEntityToDTO(ProgramInfo entity){
+        ProgramInfoDTO dto = new ProgramInfoDTO();
+        BeanUtils.copyProperties(entity, dto);
+        return dto;
     }
 }

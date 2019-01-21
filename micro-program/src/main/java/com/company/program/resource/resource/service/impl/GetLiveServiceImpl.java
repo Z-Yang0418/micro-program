@@ -27,7 +27,7 @@ import java.util.*;
 
 @Service
 @Transactional
-public class GetLiveServiceImpl implements GetLiveService {
+public class GetLiveServiceImpl extends BaseServiceImpl implements GetLiveService {
 
     private static final Logger logger = LoggerFactory.getLogger(GetLiveServiceImpl.class);
 
@@ -57,6 +57,7 @@ public class GetLiveServiceImpl implements GetLiveService {
         //提取并转化成与原接口一致的标准参数
         for(ChannelInfoDTO channelInfoDTO : channelInfoList){
             Map channelMap = new LinkedHashMap();
+            boolean programInfoTag = false; //标记默认没入库
             String channelInfoJsonStr = channelInfoDTO.getChannelInfo();
             //将channelInfo字段内的json数据转为object
             JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
@@ -91,6 +92,7 @@ public class GetLiveServiceImpl implements GetLiveService {
             //组装对应频率日期下的节目单详情参数
             for(ProgramInfoDTO programInfoDTO : programInfoDTOS){
                 if(programInfoDTO.getChannelId().equals(channelInfoDTO.getChannelId())){
+                    programInfoTag = true; //标记默认没入库
                     try {
                         this.assembedProgramParams(programInfoDTO, channelMap);
                     } catch (Exception e) {
@@ -98,6 +100,18 @@ public class GetLiveServiceImpl implements GetLiveService {
                     }
                 }
 
+            }
+            //首先，查询每天的点播表，如果存在返回结果。未存在时进行下面的操作。
+            //从节目单模板表获取节目单，对应逻辑主要是对频率为条件，结合日期时间设定：A、每周的条件 B、临时的单子、C、排期中的单子 的处理。
+            //之后将节目单模板，入库每天的点播表。
+            if(!programInfoTag){
+                ProgramInfoDTO programInfoDTONewCreate = super.putProListInProInfo(channelInfoDTO.getChannelId(), channelInfoDTO.getChannelName());
+                //回显
+                try {
+                    this.assembedProgramParams(programInfoDTONewCreate, channelMap);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
             }
 
             channelMapList.add(MapUtil.nullToEmpty(channelMap));
@@ -121,6 +135,7 @@ public class GetLiveServiceImpl implements GetLiveService {
         //提取并转化成与原接口一致的标准参数
         for(ChannelInfoDTO channelInfoDTO : channelInfoList){
             Map channelMap = new LinkedHashMap();
+            boolean programInfoTag = false; //标记默认没入库
             String channelInfoJsonStr = channelInfoDTO.getChannelInfo();
             //将channelInfo字段内的json数据转为object
             JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
@@ -155,6 +170,7 @@ public class GetLiveServiceImpl implements GetLiveService {
             //组装对应频率日期下的节目单详情参数
             for(ProgramInfoDTO programInfoDTO : programInfoDTOS){
                 if(programInfoDTO.getChannelId().equals(channelInfoDTO.getChannelId())){
+                    programInfoTag = true;
                     try {
                         this.assembedProgramParams(programInfoDTO, channelMap);
                         break;
@@ -163,6 +179,18 @@ public class GetLiveServiceImpl implements GetLiveService {
                     }
                 }
 
+            }
+            //首先，查询每天的点播表，如果存在返回结果。未存在时进行下面的操作。
+            //从节目单模板表获取节目单，对应逻辑主要是对频率为条件，结合日期时间设定：A、每周的条件 B、临时的单子、C、排期中的单子 的处理。
+            //之后将节目单模板，入库每天的点播表。
+            if(!programInfoTag){
+                ProgramInfoDTO programInfoDTONewCreate = super.putProListInProInfo(channelInfoDTO.getChannelId(), channelInfoDTO.getChannelName());
+                //回显
+                try {
+                    this.assembedProgramParams(programInfoDTONewCreate, channelMap);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
             }
 
             channelMapList.add(MapUtil.nullToEmpty(channelMap));
@@ -185,12 +213,14 @@ public class GetLiveServiceImpl implements GetLiveService {
         long channel_id = Long.parseLong(channelId);
         List<ChannelInfoDTO> channelInfoList = convertChannelInfoEntityToDTOs(channelInfoRepository.findByChannelId(channel_id));
         //获取当前日期下所有节目单信息
-        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(DateUtil.yyyymmddNow()));
+        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByChannelIdAndPrograminfoDate(channel_id, DateUtil.yyyymmddNow()));
 
         //提取并转化成与原接口一致的标准参数
-        for(ChannelInfoDTO channelInfoDTO : channelInfoList){
+        if(channelInfoList.size() != 0){
             Map channelMap = new LinkedHashMap();
+            ChannelInfoDTO channelInfoDTO = channelInfoList.get(0);
             String channelInfoJsonStr = channelInfoDTO.getChannelInfo();
+
             //将channelInfo字段内的json数据转为object
             JSONObject channelJsonObj = FastJsonUtils.convertStringToJSONObject(channelInfoJsonStr);
             channelMap.put("cid", channelInfoDTO.getChannelId());
@@ -203,7 +233,6 @@ public class GetLiveServiceImpl implements GetLiveService {
                 channelMap.put("interact", "");
             }
             channelMap.put("name", channelInfoDTO.getChannelName());
-
             if(channelJsonObj.containsKey("streams")){
                 channelMap.put("streams", new String[]{channelJsonObj.getString("streams")});
             } else {
@@ -221,18 +250,27 @@ public class GetLiveServiceImpl implements GetLiveService {
             channelMap.put("live", "");
             channelMap.put("time", "");
 
-            //组装对应频率、日期下的节目单详情参数
-            for(ProgramInfoDTO programInfoDTO : programInfoDTOS){
-                if(programInfoDTO.getChannelId().equals(channelInfoDTO.getChannelId())){
-                    try {
-                        this.assembedProgramParams(programInfoDTO, channelMap);
-                        //组装该频道下的所有节目单详情信息
-                        this.assembedProgramInfosParams(programInfoDTO, channelMap);
-                    } catch (Exception e) {
-                        logger.error(e.getMessage());
-                    }
+            //首先，查询每天的点播表，如果存在返回结果。未存在时进行下面的操作。
+            //从节目单模板表获取节目单，对应逻辑主要是对频率为条件，结合日期时间设定：A、每周的条件 B、临时的单子、C、排期中的单子 的处理。
+            //之后将节目单模板，入库每天的点播表。
+            if(programInfoDTOS.size() != 0){
+                try {
+                    //组装对应频率、日期下的节目单详情参数
+                    this.assembedProgramParams(programInfoDTOS.get(0), channelMap);
+                    //组装该频道下的所有节目单详情信息
+                    this.assembedProgramInfosParams(programInfoDTOS.get(0), channelMap);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
                 }
-
+            }else{  //入库
+                ProgramInfoDTO programInfoNewCreate = super.putProListInProInfo(channelInfoDTO.getChannelId(), channelInfoDTO.getChannelName());
+                try {
+                    //将新入库的节目单信息回显
+                    this.assembedProgramParams(programInfoNewCreate, channelMap);
+                    this.assembedProgramInfosParams(programInfoNewCreate, channelMap);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
             }
 
             channelMapList.add(MapUtil.nullToEmpty(channelMap));
