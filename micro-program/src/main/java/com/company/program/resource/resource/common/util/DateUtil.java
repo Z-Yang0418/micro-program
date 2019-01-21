@@ -69,6 +69,19 @@ public class DateUtil {
         return t;
     }
 
+    public static Date yyyymmddNow(){
+
+        Date date = new Date();
+        Date nowDate = null;
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            nowDate = df.parse(df.format(date));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+       return nowDate;
+    }
+
     /**
      * 判断传入时间戳是否是未来天数
      * [精确到天，即同一天也返回false]

@@ -51,7 +51,7 @@ public class GetLiveServiceImpl implements GetLiveService {
         long class_id = Long.parseLong(classId);
         List<ChannelInfoDTO> channelInfoList = convertChannelInfoEntityToDTOs(channelInfoRepository.findByClassId(class_id));
         //获取当前日期下所有节目单信息
-        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(new Date()));
+        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(DateUtil.yyyymmddNow()));
 
 
         //提取并转化成与原接口一致的标准参数
@@ -116,7 +116,7 @@ public class GetLiveServiceImpl implements GetLiveService {
 
         List<ChannelInfoDTO> channelInfoList = convertChannelInfoEntityToDTOs(channelInfoRepository.findAllLive());
         //获取当前日期下所有节目单信息
-        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(new Date()));
+        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(DateUtil.yyyymmddNow()));
 
         //提取并转化成与原接口一致的标准参数
         for(ChannelInfoDTO channelInfoDTO : channelInfoList){
@@ -157,6 +157,7 @@ public class GetLiveServiceImpl implements GetLiveService {
                 if(programInfoDTO.getChannelId().equals(channelInfoDTO.getChannelId())){
                     try {
                         this.assembedProgramParams(programInfoDTO, channelMap);
+                        break;
                     } catch (Exception e) {
                         logger.error(e.getMessage());
                     }
@@ -184,7 +185,7 @@ public class GetLiveServiceImpl implements GetLiveService {
         long channel_id = Long.parseLong(channelId);
         List<ChannelInfoDTO> channelInfoList = convertChannelInfoEntityToDTOs(channelInfoRepository.findByChannelId(channel_id));
         //获取当前日期下所有节目单信息
-        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(new Date()));
+        List<ProgramInfoDTO> programInfoDTOS = convertProgramInfoEntityToDTOs(programInfoRepository.findByPrograminfoDate(DateUtil.yyyymmddNow()));
 
         //提取并转化成与原接口一致的标准参数
         for(ChannelInfoDTO channelInfoDTO : channelInfoList){

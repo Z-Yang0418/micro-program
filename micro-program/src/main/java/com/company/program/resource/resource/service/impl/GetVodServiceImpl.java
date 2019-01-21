@@ -74,7 +74,7 @@ public class GetVodServiceImpl implements GetVodService {
             String channelTimeFormat = "yyyy-MM-dd";
             Date channelDate;
             if(StringUtils.isBlank(timestamp)){
-                channelDate = new Date();
+                channelDate = DateUtil.yyyymmddNow();
             }else{
                 time_stamp = Long.parseLong(timestamp);
                 channelDate = DateUtil.timeStampToDate(timestamp, channelTimeFormat);
